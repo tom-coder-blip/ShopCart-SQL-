@@ -46,6 +46,7 @@ CREATE TABLE OrderDetails (
 );
 SELECT * FROM OrderDetails;
 
+
 -- 2) Insert Sample Data for Products and Users
 INSERT INTO Products (name, price) VALUES ('Coke', 10.00);
 INSERT INTO Products (name, price) VALUES ('Chips', 5.00);
@@ -55,6 +56,7 @@ INSERT INTO Users (Username) VALUES ('Jem');
 
 SELECT * FROM Products;
 SELECT * FROM Users;
+
 
 -- 3) Demonstrate Adding Items to the Cart
 
@@ -80,6 +82,7 @@ VALUES (1, 2, 1)
 ON CONFLICT (UserID, ProductId)
 DO UPDATE SET Qty = Cart.Qty + 1;
 SELECT * FROM Cart;
+
 
 --FOR USER 2
 
@@ -109,32 +112,42 @@ SELECT * FROM Cart;
 
 --FOR USER 1:
 
---removes product 1 if its more than 1 item
-UPDATE Cart SET Qty = Qty - 1 
-WHERE UserID = 1 AND ProductId = 1 AND Qty > 1;
-SELECT * FROM Cart;
+DO $$
+BEGIN
+    -- Check product 1 for User 1
+    IF EXISTS (SELECT 1 FROM Cart WHERE UserID = 1 AND ProductId = 1 AND Qty > 1) THEN
+        UPDATE Cart SET Qty = Qty - 1 
+        WHERE UserID = 1 AND ProductId = 1;
+    ELSIF EXISTS (SELECT 1 FROM Cart WHERE UserID = 1 AND ProductId = 1 AND Qty = 1) THEN
+        DELETE FROM Cart WHERE UserID = 1 AND ProductId = 1;
+    END IF;
 
---removes product 1 if its only 1 item left
-DELETE FROM Cart WHERE UserID = 1 AND ProductId = 1 AND Qty = 1;
-SELECT * FROM Cart;
+    -- Check product 2 for User 1
+    IF EXISTS (SELECT 1 FROM Cart WHERE UserID = 1 AND ProductId = 2 AND Qty = 1) THEN
+        DELETE FROM Cart WHERE UserID = 1 AND ProductId = 2;
+    END IF;
+END $$;
 
---removes product 2 if its only 1 item left 
-DELETE FROM Cart WHERE UserID = 1 AND ProductId = 2 AND Qty = 1;
-SELECT * FROM Cart;
+select * from cart;
 
 --FOR USER 2:
---removes product 1 if its more than 1 item
-UPDATE Cart SET Qty = Qty - 1 
-WHERE UserID = 2 AND ProductId = 1 AND Qty > 1;
-SELECT * FROM Cart;
+DO $$
+BEGIN
+    -- Check product 1 for User 2
+    IF EXISTS (SELECT 1 FROM Cart WHERE UserID = 2 AND ProductId = 1 AND Qty > 1) THEN
+        UPDATE Cart SET Qty = Qty - 1 
+        WHERE UserID = 2 AND ProductId = 1;
+    ELSIF EXISTS (SELECT 1 FROM Cart WHERE UserID = 2 AND ProductId = 1 AND Qty = 1) THEN
+        DELETE FROM Cart WHERE UserID = 2 AND ProductId = 1;
+    END IF;
 
---removes product 1 if its only 1 item left
-DELETE FROM Cart WHERE UserID = 2 AND ProductId = 1 AND Qty = 1;
-SELECT * FROM Cart;
+    -- Check product 2 for User 2
+    IF EXISTS (SELECT 1 FROM Cart WHERE UserID = 2 AND ProductId = 2 AND Qty = 1) THEN
+        DELETE FROM Cart WHERE UserID = 2 AND ProductId = 2;
+    END IF;
+END $$;
 
---removes product 2 if its only 1 item left 
-DELETE FROM Cart WHERE UserID = 2 AND ProductId = 2 AND Qty = 1;
-SELECT * FROM Cart;
+select * from cart;
 
 -- 5) Checkout with Transaction
 
@@ -208,6 +221,6 @@ DROP TABLE Cart;
 DROP TABLE OrderHeader;
 DROP TABLE OrderDetails;
 
-DELETE from OrderDetails where OrderHeader = 2 and qty = 2;
-DELETE from OrderDetails where OrderHeader = 2 and qty = 1;
+
+
 
